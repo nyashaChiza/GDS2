@@ -1,0 +1,215 @@
+
+{% extends 'layouts/base.html' %}
+{% load custom_tags %}
+{% load crispy_forms_tags %}
+
+{% load static %}
+
+{% block body %}
+<div class="nk-content my-5">
+    <div class="container-fluid">
+        <div class="nk-content-inner">
+            <div class="nk-content-body">
+                <div class="nk-block-head nk-block-head-sm">
+                    <div class="nk-block-between">
+                        <div class="nk-block-head-content">
+                            <h3 class="nk-block-title page-title">Search Results ({{ search_results_count }})</h3>
+                        </div><!-- .nk-block-head-content -->
+                        <div class="nk-block-head-content">
+                            <div class="toggle-wrap nk-block-tools-toggle">
+                                <a href="#" class="btn btn-icon btn-trigger toggle-expand me-n1" data-target="pageMenu"><em class="icon ni ni-more-v"></em></a>
+                                <div class="toggle-expand-content" data-content="pageMenu">
+                                    <ul class="nk-block-tools g-3">
+                                        <li>
+                                            <form action="{% url 'requisition_search' %}" method="get">
+                                            <div class="form-control-wrap">
+                                                <div class="form-icon form-icon-right">
+                                                    <em class="icon ni ni-search"></em>
+                                                </div>
+                                                <input type="text" name="type" class="form-control" id="default-04" placeholder="Quick search by Type">
+                                            </div>
+                                        </form>
+                                        </li>
+                                        <li>
+                                            <div class="drodown">
+                                                <a href="#" class="dropdown-toggle dropdown-indicator btn btn-outline-light btn-white" data-bs-toggle="dropdown">Status</a>
+                                                <div class="dropdown-menu dropdown-menu-end">
+                                                    <ul class="link-list-opt no-bdr">
+                                                        <li><a href="{% url 'requisition_filter' %}?status=Pending"><span>Pending</span></a></li>
+                                                        <li><a href="{% url 'requisition_filter' %}?status=Denied"><span>Denied</span></a></li>
+                                                        <li><a href="{% url 'requisition_filter' %}?status=Approved"><span>Approved</span></a></li>
+                                                        <li><a href="{% url 'requisition_filter' %}?status=Delivered"><span>Delivered</span></a></li>
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="nk-block-tools-opt">
+                                            <a class="btn btn-icon btn-primary d-md-none"><em data-bs-toggle="modal" data-bs-target="#addRequisitionModal"  class="icon ni ni-plus"></em></a>
+                                            <a href="#" data-bs-toggle="modal" data-bs-target="#addRequisitionModal" class="btn btn-primary d-none d-md-inline-flex"><em class="icon ni ni-plus"></em><span>Add Requisition</span></a>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div><!-- .nk-block-head-content -->
+                    </div><!-- .nk-block-between -->
+                </div><!-- .nk-block-head -->
+                <div class="nk-block">
+                    <div class="nk-tb-list is-separate is-medium mb-3">
+                        <div class="nk-tb-item nk-tb-head">
+                           
+                            <div class="nk-tb-col"><span>Type</span></div>
+                            <div class="nk-tb-col tb-col-md"><span>Date</span></div>
+                            <div class="nk-tb-col"><span class="d-none d-sm-block">Status</span></div>
+                            <div class="nk-tb-col nk-tb-col-tools">
+                                
+                            </div>
+                        </div><!-- .nk-tb-item -->
+                        <!-- .nk-tb-item -->
+                         {% for requisition in search_results %}
+                        <div class="nk-tb-item">
+                            
+                            <div class="nk-tb-col">
+                                <span class="tb-lead"><a href="{% url 'requisition_detail' requisition.pk %}">{{ requisition.requisition_type }}</a></span>
+                            </div>
+                            <div class="nk-tb-col tb-col-md">
+                                <span class="tb-sub">{{ requisition.created }}</span>
+                            </div>
+                            <div class="nk-tb-col">
+                                <span class="dot bg-success d-sm-none"></span>
+                                <span class="badge badge-sm badge-dot has-bg bg-{% if requisition.status == 'Approved' %}success{% elif requisition.status == 'Denied' %}danger{% elif requisition.status == 'Delivered' %}primary{% else%}warning{% endif %} d-none d-sm-inline-flex">{{ requisition.status }}</span>
+                            </div>
+                            <div class="nk-tb-col nk-tb-col-tools">
+                                <ul class="nk-tb-actions gx-1">
+                                    
+                                  <li>
+                                        <div class="drodown me-n1">
+                                            <a href="#" class="dropdown-toggle btn btn-icon btn-trigger" data-bs-toggle="dropdown"><em class="icon ni ni-more-h"></em></a>
+                                            <div class="dropdown-menu dropdown-menu-end">
+                                                <ul class="link-list-opt no-bdr">
+                                                    <li><a href="{% url 'requisition_detail' requisition.pk %}"><em class="icon ni ni-eye"></em><span>View </span></a></li>
+                                                    {% if requisition.status != 'Delivered' or request.user|has_role:"Admin" or request.user|has_role:"Operator" %}
+                                                    <li data-bs-toggle="modal" data-bs-target="#MarkAsDeliveredModal{{ requisition.pk }}"><a ><em class="icon ni ni-check-circle-cut" ></em><span>Mark as Delivered</span></a></li>
+                                                    {% endif %}
+                                                    {% if requisition.status == 'Pending' or request.user|has_role:"Admin" or request.user|has_role:"Manager" %}
+                                                    <li data-bs-toggle="modal" data-bs-target="#ReviewModal{{ requisition.pk }}"><a ><em class="icon ni ni-list-check"></em><span>Review</span></a></li>
+                                                    {% endif %}
+                                                    {% if requisition.status != 'Approved' or requisition.status != 'Delivered' %}
+                                                    <li data-bs-toggle="modal" data-bs-target="#removeModal{{ requisition.pk }}"><a class="text-danger"><em class="icon ni ni-trash"></em><span>Remove</span></a></li>
+                                                    {% endif %}
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div><!-- .nk-tb-item -->
+                            <!-- Modal Alert -->
+                            <div class="modal fade" tabindex="-1" id="MarkAsDeliveredModal{{ requisition.pk }}">
+                                <div class="modal-dialog" role="document">
+                                    <div class="modal-content">
+                                        <a href="#" class="close" data-bs-dismiss="modal"><em class="icon ni ni-cross"></em></a>
+                                        <div class="modal-body modal-body-lg text-center">
+                                            <div class="nk-modal">
+                                                <em class="nk-modal-icon icon icon-circle icon-circle-xxl ni ni-check bg-success"></em>
+                                                <h4 class="nk-modal-title">Review Requisition!</h4>
+                                                <div class="nk-modal-text">
+                                                    <div class="caption-text">Mark This Requisition <strong>Delivered</strong></div>
+                                                   </div>
+                                                <div class="nk-modal-action">
+                                                    <a href="{% url 'review_requisition' requisition.pk %}?status=Delivered" class="btn btn-lg btn-mw btn-success" >Continue</a>
+                                                    <a href="#" class="btn btn-lg btn-mw btn-light" data-bs-dismiss="modal">Cancel</a>
+                                                </div>
+                                            </div>
+                                        </div><!-- .modal-body -->
+                                        <div class="modal-footer bg-lighter">
+                                            
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+    <div class="modal fade" tabindex="-1" id="ReviewModal{{ requisition.pk }}">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <a href="#" class="close" data-bs-dismiss="modal"><em class="icon ni ni-cross"></em></a>
+                <div class="modal-body modal-body-lg text-center">
+                    <div class="nk-modal">
+                        <em class="nk-modal-icon icon icon-circle icon-circle-xxl ni ni-check bg-success"></em>
+                        <h4 class="nk-modal-title">Review Requisition {{requisition}}!</h4>
+                        <div class="nk-modal-text">
+                            <div class="caption-text"><strong>Review</strong> This Requsition</div>
+                           </div>
+                        <div class="nk-modal-action">
+                            <a href="{% url 'review_requisition' requisition.pk %}?status=Approved" class="btn btn-lg btn-mw btn-success" >Approved</a>
+                            <a href="{% url 'review_requisition' requisition.pk %}?status=Denied" class="btn btn-lg btn-mw btn-light" >Denied</a>
+                        </div>
+                    </div>
+                </div><!-- .modal-body -->
+                <div class="modal-footer bg-lighter">
+                    
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" tabindex="-1" id="removeModal{{ requisition.pk }}">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <a href="#" class="close" data-bs-dismiss="modal"><em class="icon ni ni-cross"></em></a>
+                <div class="modal-body modal-body-lg text-center">
+                    <div class="nk-modal">
+                        <em class="nk-modal-icon icon icon-circle icon-circle-xxl ni ni-cross bg-danger"></em>
+                        <h4 class="nk-modal-title">Remove Requisition!</h4>
+                        <div class="nk-modal-text">
+                            <div class="caption-text">Are you sure you want to delete this Requsistion <strong>{{ requisition }}</strong></div>
+                           </div>
+                        <div class="nk-modal-action">
+                            <a href="{% url 'requisition_delete' requisition.pk %}" class="btn btn-lg btn-mw btn-dark" >Remove</a>
+                            <a href="#" class="btn btn-lg btn-mw btn-light" data-bs-dismiss="modal">Cancel</a>
+                        </div>
+                    </div>
+                </div><!-- .modal-body -->
+                <div class="modal-footer bg-lighter">
+                    
+                </div>
+            </div>
+        </div>
+    </div>
+    
+                        {% endfor %}
+                              </div>
+                </div><!-- .nk-block -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Sale modal -->
+<div class="modal fade" id="addRequisitionModal">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add New Requisition</h5>
+                <a href="#" class="close" data-bs-dismiss="modal" aria-label="Close">
+                    <em class="icon ni ni-cross"></em>
+                </a>
+            </div>
+            <div class="modal-body">
+                <form action="{% url 'requisition_create' %}" method="post">
+                    {% csrf_token %}
+                    <div class="row g-4">
+                        {{ add_requisition_form }}
+                        <div class="col-12">
+                            <div class="form-group">
+                                <button type="submit" class="btn btn-lg btn-primary" value="save">Save</button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer bg-light">
+                <span class="sub-text">Endframe</span>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- ./Add Sale modal -->
+{% endblock %}
